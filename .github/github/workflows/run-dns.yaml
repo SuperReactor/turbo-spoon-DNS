@@ -1,0 +1,25 @@
+name: Run Apple Silicon DNS
+on: [push, workflow_dispatch]
+
+jobs:
+  run-dns:
+    runs-on: macos-14  # Native Apple Silicon (M1) runner
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Permissions
+        run: chmod +x dns-folder/dns-server
+
+      - name: Run DNS Server
+        run: |
+          cd dns-folder
+          # Using sudo to bind to port 53
+          sudo ./dns-server &
+          sleep 5
+
+      - name: Test Local Resolution
+        run: |
+          # Verify the server responds to queries
+          dig @127.0.0.1 google.com
