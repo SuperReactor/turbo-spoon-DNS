@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/Users/darren/dns/build",
+  "command": "/usr/bin/clang++ -DADMIN_PASSWORD=\\\"password\\\" -DCPPHTTPLIB_BROTLI_SUPPORT -DCPPHTTPLIB_OPENSSL_SUPPORT -DCPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN -DCPPHTTPLIB_ZLIB_SUPPORT -I/Users/darren/dns/cpp/src -I/Users/darren/dns/build/_deps/json-src/include -isystem /Users/darren/dns/build/_deps/httplib-src -isystem /opt/homebrew/Cellar/brotli/1.1.0/include -isystem /opt/homebrew/Cellar/openssl@3/3.6.0/include -g -std=c++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.6 -Wall -Wextra -O0 -g -ftemplate-backtrace-limit=0 -o CMakeFiles/dns-server.dir/cpp/src/main.cpp.o -c /Users/darren/dns/cpp/src/main.cpp",
+  "file": "/Users/darren/dns/cpp/src/main.cpp",
+  "output": "CMakeFiles/dns-server.dir/cpp/src/main.cpp.o"
+},
+{
+  "directory": "/Users/darren/dns/build",
+  "command": "/usr/bin/clang++ -DADMIN_PASSWORD=\\\"password\\\" -DCPPHTTPLIB_BROTLI_SUPPORT -DCPPHTTPLIB_OPENSSL_SUPPORT -DCPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN -DCPPHTTPLIB_ZLIB_SUPPORT -I/Users/darren/dns/cpp/src -I/Users/darren/dns/build/_deps/json-src/include -isystem /Users/darren/dns/build/_deps/httplib-src -isystem /opt/homebrew/Cellar/brotli/1.1.0/include -isystem /opt/homebrew/Cellar/openssl@3/3.6.0/include -g -std=c++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.6 -Wall -Wextra -O0 -g -ftemplate-backtrace-limit=0 -o CMakeFiles/dns-server.dir/cpp/src/DnsServer.cpp.o -c /Users/darren/dns/cpp/src/DnsServer.cpp",
+  "file": "/Users/darren/dns/cpp/src/DnsServer.cpp",
+  "output": "CMakeFiles/dns-server.dir/cpp/src/DnsServer.cpp.o"
+},
+{
+  "directory": "/Users/darren/dns/build",
+  "command": "/usr/bin/clang++ -DADMIN_PASSWORD=\\\"password\\\" -DCPPHTTPLIB_BROTLI_SUPPORT -DCPPHTTPLIB_OPENSSL_SUPPORT -DCPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN -DCPPHTTPLIB_ZLIB_SUPPORT -I/Users/darren/dns/cpp/src -I/Users/darren/dns/build/_deps/json-src/include -isystem /Users/darren/dns/build/_deps/httplib-src -isystem /opt/homebrew/Cellar/brotli/1.1.0/include -isystem /opt/homebrew/Cellar/openssl@3/3.6.0/include -g -std=c++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk -mmacosx-version-min=15.6 -Wall -Wextra -O0 -g -ftemplate-backtrace-limit=0 -o CMakeFiles/dns-server.dir/cpp/src/DnsPacket.cpp.o -c /Users/darren/dns/cpp/src/DnsPacket.cpp",
+  "file": "/Users/darren/dns/cpp/src/DnsPacket.cpp",
+  "output": "CMakeFiles/dns-server.dir/cpp/src/DnsPacket.cpp.o"
+}
+]

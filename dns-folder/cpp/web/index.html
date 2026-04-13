@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS Server</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050810;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.08);
+            --accent: #00f5c4;
+            --accent2: #7b5ea7;
+            --danger: #ff4d6d;
+            --text: #e8eaf0;
+            --muted: rgba(232,234,240,0.45);
+            --font-display: 'Syne', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-display);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #vanta-bg { position: fixed; inset: 0; z-index: 0; }
+
+        .app {
+            position: relative; z-index: 1;
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+
+        .header {
+            padding: 22px 48px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            background: rgba(5,8,16,0.65);
+            position: sticky; top: 0; z-index: 10;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 14px; }
+
+        .logo-mark {
+            width: 34px; height: 34px;
+            border: 1.5px solid var(--accent); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent);
+        }
+
+        .header h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; }
+        .header h1 span { color: var(--accent); }
+
+        .status-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px; border-radius: 999px;
+            border: 1px solid var(--border); background: var(--surface);
+            font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent); box-shadow: 0 0 8px var(--accent);
+            animation: pulse 2s infinite;
+        }
+        .status-dot.offline { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        .main {
+            flex: 1; padding: 40px 48px;
+            max-width: 1100px; margin: 0 auto; width: 100%;
+        }
+
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            font-size: .68rem; font-family: var(--font-mono);
+            color: var(--muted); letter-spacing: .15em; text-transform: uppercase;
+        }
+
+        .actions { display: flex; gap: 8px; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px;
+            cursor: pointer; font-family: var(--font-display);
+            font-size: 13px; font-weight: 600; transition: all .18s;
+            background: var(--surface); color: var(--text);
+        }
+        .btn:hover { background: var(--surface-hover); transform: translateY(-1px); }
+        .btn svg { flex-shrink: 0; }
+
+        .btn-accent { background: var(--accent); color: #050810; border-color: var(--accent); }
+        .btn-accent:hover { background: #00ddb0; border-color: #00ddb0; box-shadow: 0 4px 20px rgba(0,245,196,.25); }
+
+        .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+        .btn-ghost:hover { color: var(--text); background: var(--surface); }
+
+        .btn-danger { background: transparent; border-color: rgba(255,77,109,.25); color: var(--danger); }
+        .btn-danger:hover { background: rgba(255,77,109,.08); }
+
+        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+
+        /* Toggle */
+        .toggle { position: relative; width: 38px; height: 22px; cursor: pointer; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-track {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,.08);
+            border: 1px solid var(--border); border-radius: 999px; transition: all .2s;
+        }
+        .toggle input:checked + .toggle-track {
+            background: rgba(0,245,196,.2); border-color: rgba(0,245,196,.5);
+        }
+        .toggle-thumb {
+            position: absolute; top: 3px; left: 3px;
+            width: 14px; height: 14px;
+            background: var(--muted); border-radius: 50%; transition: all .2s;
+        }
+        .toggle input:checked ~ .toggle-thumb {
+            transform: translateX(16px);
+            background: var(--accent); box-shadow: 0 0 6px var(--accent);
+        }
+
+        /* Cards */
+        .domains-grid { display: flex; flex-direction: column; gap: 10px; }
+
+        .domain-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px 22px;
+            transition: all .2s; backdrop-filter: blur(10px);
+        }
+        .domain-card:hover {
+            background: var(--surface-hover); border-color: rgba(255,255,255,.11);
+            box-shadow: 0 6px 28px rgba(0,0,0,.25);
+        }
+        .domain-card.disabled { opacity: .4; }
+
+        .domain-card-header {
+            display: flex; align-items: center;
+            justify-content: space-between; margin-bottom: 12px;
+        }
+
+        .domain-left { display: flex; align-items: center; gap: 12px; }
+
+        .domain-name {
+            font-size: .95rem; font-weight: 800; letter-spacing: -.02em;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .static-badge {
+            font-family: var(--font-mono); font-size: 10px;
+            padding: 2px 7px; border-radius: 4px;
+            background: rgba(123,94,167,.2); border: 1px solid rgba(123,94,167,.35);
+            color: #c4a7ff;
+        }
+
+        .card-actions { display: flex; gap: 6px; align-items: center; }
+
+        .records-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+        .record-chip {
+            display: flex; align-items: center; gap: 7px;
+            padding: 5px 10px;
+            background: rgba(255,255,255,.025);
+            border: 1px solid var(--border); border-radius: 6px;
+            font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+        }
+
+        .record-type { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; }
+        .type-A    { background: rgba(0,245,196,.15); color: var(--accent); }
+        .type-AAAA { background: rgba(99,155,255,.15); color: #639bff; }
+        .type-CNAME{ background: rgba(255,196,0,.15);  color: #ffc400; }
+        .type-MX   { background: rgba(255,100,200,.15);color: #ff64c8; }
+        .type-TXT  { background: rgba(255,255,255,.07);color: var(--muted); }
+        .type-NS   { background: rgba(255,150,50,.15); color: #ff9632; }
+
+        .empty-state { text-align: center; padding: 80px 20px; color: var(--muted); }
+        .empty-icon { font-size: 40px; margin-bottom: 14px; opacity: .3; }
+        .empty-state h3 { font-size: 1rem; font-weight: 800; opacity: .45; margin-bottom: 6px; }
+        .empty-state p { font-size: .8rem; font-family: var(--font-mono); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(5,8,16,.88); z-index: 100;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: #0b0f1c; border: 1px solid var(--border); border-radius: 16px;
+            padding: 30px; max-width: 640px; width: 90%;
+            max-height: 92vh; overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0,0,0,.7);
+        }
+        .modal::-webkit-scrollbar { width: 3px; }
+        .modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .modal-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 22px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block; font-family: var(--font-mono); font-size: 10px;
+            color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 7px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 9px 13px;
+            background: rgba(255,255,255,.03); border: 1px solid var(--border);
+            border-radius: 7px; color: var(--text); font-family: var(--font-mono);
+            font-size: 12px; transition: all .18s; outline: none;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,245,196,.08);
+        }
+        .form-group select option { background: #0b0f1c; }
+
+        .checkbox-label {
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+            font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+        }
+        .checkbox-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); }
+
+        .record-form {
+            background: rgba(255,255,255,.02); border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px; margin-bottom: 8px;
+        }
+        .record-form-row {
+            display: grid; grid-template-columns: 90px 1fr 1fr;
+            gap: 7px; margin-bottom: 7px;
+        }
+        .record-form-bottom { display: flex; justify-content: space-between; align-items: center; }
+
+        .modal-footer {
+            display: flex; gap: 8px; justify-content: flex-end;
+            margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);
+        }
+
+        .records-section-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .records-section-header label {
+            font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .12em;
+        }
+
+        .editor-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+        .editor-tab {
+            padding: 5px 12px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer; font-family: var(--font-mono);
+            font-size: 10px; color: var(--muted); transition: all .18s;
+        }
+        .editor-tab.active { background: rgba(0,245,196,.08); border-color: rgba(0,245,196,.3); color: var(--accent); }
+
+        .monaco-container { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 300px; }
+
+        .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+        .login-error {
+            color: var(--danger); font-family: var(--font-mono);
+            font-size: 11px; margin-bottom: 10px; display: none;
+        }
+
+        .loading-text { text-align: center; padding: 40px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+        @media (max-width: 768px) {
+            .header { padding: 18px 20px; }
+            .main { padding: 24px 20px; }
+            .record-form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="vanta-bg"></div>
+
+<div class="app">
+    <header class="header">
+        <div class="header-left">
+            <div class="logo-mark">
+                <i data-lucide="globe" style="width:16px;height:16px;"></i>
+            </div>
+            <h1>dns<span>ctrl</span></h1>
+        </div>
+        <div class="status-pill">
+            <div class="status-dot" id="statusIndicator"></div>
+            <span id="statusText">loading...</span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="section-header">
+            <span class="section-title">// domain overrides</span>
+            <div class="actions">
+                <button class="btn btn-ghost" onclick="openAddStaticModal()">
+                    <i data-lucide="file-code" style="width:13px;height:13px;"></i> Static
+                </button>
+                <button class="btn btn-accent" onclick="openAddModal()">
+                    <i data-lucide="plus" style="width:13px;height:13px;"></i> Add Domain
+                </button>
+            </div>
+        </div>
+        <div class="domains-grid" id="domainsList">
+            <div class="loading-text">fetching records...</div>
+        </div>
+    </main>
+</div>
+
+<!-- Login Modal -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal" style="max-width:360px;">
+        <div class="modal-title">authentication required</div>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>password</label>
+                <input type="password" id="password" required placeholder="enter password" autofocus>
+            </div>
+            <div class="login-error" id="loginError"></div>
+            <button type="submit" class="btn btn-accent" style="width:100%;justify-content:center;margin-top:4px;">
+                authenticate <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Add/Edit Domain Modal -->
+<div class="modal-overlay" id="domainModal">
+    <div class="modal">
+        <div class="modal-title" id="modalTitle">add domain</div>
+        <form id="domainForm" onsubmit="saveDomain(event)">
+            <div class="form-group">
+                <label>domain name</label>
+                <input type="text" id="domainName" required placeholder="example.local or *.example.local">
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="enableStatic" onchange="toggleStaticFields()">
+                    enable static website
+                </label>
+            </div>
+            <div id="staticFields" style="display:none;">
+                <div class="form-group">
+                    <label>static port</label>
+                    <input type="number" id="staticPort" min="1024" max="65535" placeholder="8080">
+                </div>
+                <div class="form-group">
+                    <div class="editor-tabs">
+                        <button type="button" class="editor-tab active" onclick="switchEditorTab('editor','domainModal')">HTML Editor</button>
+                        <button type="button" class="editor-tab" onclick="switchEditorTab('path','domainModal')">File Path</button>
+                    </div>
+                    <div id="editorTabDomain">
+                        <div class="monaco-container" id="monacoEditorDomain"></div>
+                    </div>
+                    <div id="pathTabDomain" style="display:none;">
+                        <input type="text" id="staticHtmlPath" placeholder="/path/to/index.html">
+                    </div>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="records-section-header">
+                <label>dns records</label>
+                <button type="button" class="btn btn-sm btn-ghost" onclick="addRecord()">
+                    <i data-lucide="plus" style="width:11px;height:11px;"></i> record
+                </button>
+            </div>
+            <div id="recordsContainer"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">cancel</button>
+                <button type="submit" class="btn btn-accent">
+                    save <i data-lucide="check" style="width:13px;height:13px;"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Static Override Modal -->
+<div class="modal-overlay" id="staticModal">
+    <div class="modal">
+        <div class="modal-title">add static override</div>
+        <form id="staticForm" onsubmit="saveStaticOverride(event)">
+            <div class="form-group">
+                <label>domain name</label>
+                <input type="text" id="staticDomainName" required placeholder="example.local">
+            </div>
+            <div class="form-group">
+                <label>static port</label>
+                <input type="number" id="staticPortInput" min="1024" max="65535" required placeholder="8080">
+            </div>
+            <div class="form-group">
+                <div class="editor-tabs">
+                    <button type="button" class="editor-tab active" onclick="switchEditorTab('editor')">HTML Editor</button>
+                    <button type="button" class="editor-tab" onclick="switchEditorTab('path')">File Path</button>
+                </div>
+                <div id="editorTab">
+                    <div class="monaco-container" id="monacoEditorStatic"></div>
+                </div>
+                <div id="pathTab" style="display:none;">
+                    <input type="text" id="staticHtmlPathInput" placeholder="/path/to/index.html">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>ip address (A record)</label>
+                <input type="text" id="staticIpAddress" required placeholder="127.0.0.1" value="127.0.0.1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeStaticModal()">cancel</button>
+                <button type="submit" class="btn btn-accent">
+                    create <i data-lucide="check" style="width:13px;height:13px;"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.birds.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+<script>
+    VANTA.BIRDS({
+        el: "#vanta-bg", THREE,
+        mouseControls: true, touchControls: true,
+        backgroundColor: 0x050810,
+        color1: 0x00f5c4, color2: 0x7b5ea7,
+        colorMode: "lerp", birdSize: 1.1, wingSpan: 25,
+        speedLimit: 3.5, separation: 60, alignment: 50, cohesion: 50, quantity: 3
+    });
+
+    lucide.createIcons();
+
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+
+    const defaultHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Static Page</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Hello World</h1>
+    <p>Edit this to customize your static page.</p>
+</body>
+</html>`;
+
+    let monacoStatic = null, monacoDomain = null, monacoReady = false;
+
+    require(['vs/editor/editor.main'], () => {
+        monaco.editor.defineTheme('dnsTheme', {
+            base: 'vs-dark', inherit: true, rules: [],
+            colors: {
+                'editor.background': '#080c18',
+                'editor.lineHighlightBackground': '#0f1424',
+                'editorLineNumber.foreground': '#2a3050',
+                'editorLineNumber.activeForeground': '#00f5c4',
+                'editor.selectionBackground': '#00f5c420',
+            }
+        });
+
+        const editorOpts = {
+            language: 'html', theme: 'dnsTheme',
+            minimap: { enabled: false }, fontSize: 12,
+            fontFamily: "'Space Mono', monospace",
+            lineNumbers: 'on', wordWrap: 'on',
+            scrollBeyondLastLine: false, automaticLayout: true,
+        };
+
+        monacoStatic = monaco.editor.create(document.getElementById('monacoEditorStatic'), { ...editorOpts, value: defaultHtml });
+        monacoDomain = monaco.editor.create(document.getElementById('monacoEditorDomain'), { ...editorOpts, value: defaultHtml });
+        monacoReady = true;
+    });
+
+    let currentEditingDomain = null, recordCounter = 0;
+
+    window.addEventListener('DOMContentLoaded', () => { checkAuthStatus(); });
+
+    function switchEditorTab(tab, modalId = 'staticModal') {
+        const isStatic = modalId === 'staticModal';
+        const editorEl = document.getElementById(isStatic ? 'editorTab' : 'editorTabDomain');
+        const pathEl   = document.getElementById(isStatic ? 'pathTab'   : 'pathTabDomain');
+        const tabs = document.querySelectorAll(`#${modalId} .editor-tab`);
+        tabs.forEach(t => t.classList.remove('active'));
+        if (tab === 'editor') {
+            editorEl.style.display = 'block'; pathEl.style.display = 'none';
+            tabs[0].classList.add('active');
+            setTimeout(() => (isStatic ? monacoStatic : monacoDomain)?.layout(), 50);
+        } else {
+            editorEl.style.display = 'none'; pathEl.style.display = 'block';
+            tabs[1].classList.add('active');
+        }
+    }
+
+    async function checkAuthStatus() {
+        try {
+            const res = await fetch('/api/auth-status');
+            const data = await res.json();
+            if (data.requiresAuth && !data.authenticated) {
+                document.getElementById('loginModal').classList.add('active');
+            } else { loadStatus(); loadDomains(); }
+        } catch { loadStatus(); loadDomains(); }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const password = document.getElementById('password').value;
+        const errDiv = document.getElementById('loginError');
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const r = await res.json();
+            if (r.status === 'success' && r.authenticated) {
+                document.getElementById('loginModal').classList.remove('active');
+                document.getElementById('loginForm').reset();
+                errDiv.style.display = 'none';
+                loadStatus(); loadDomains(); lucide.createIcons();
+            } else {
+                errDiv.textContent = r.message || 'invalid password';
+                errDiv.style.display = 'block';
+            }
+        } catch { errDiv.textContent = 'connection error'; errDiv.style.display = 'block'; }
+    }
+
+    async function loadStatus() {
+        try {
+            const res = await fetch('/api/status');
+            if (res.status === 401) { document.getElementById('loginModal').classList.add('active'); return; }
+            const data = await res.json();
+            const dot = document.getElementById('statusIndicator');
+            const txt = document.getElementById('statusText');
+            dot.classList.toggle('offline', !data.overridesEnabled);
+            txt.textContent = data.overridesEnabled ? 'overrides active' : 'overrides disabled';
+        } catch {}
+    }
+
+    async function loadDomains() {
+        try {
+            const res = await fetch('/api/domains');
+            if (res.status === 401) { document.getElementById('loginModal').classList.add('active'); return; }
+            const data = await res.json();
+            displayDomains(data.domains || []);
+        } catch {
+            document.getElementById('domainsList').innerHTML = '<div class="loading-text">error loading domains</div>';
+        }
+    }
+
+    function displayDomains(domains) {
+        const container = document.getElementById('domainsList');
+        if (!domains.length) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">◈</div>
+                    <h3>no domains configured</h3>
+                    <p>click "add domain" to get started</p>
+                </div>`;
+            return;
+        }
+        container.innerHTML = domains.map(d => {
+            const enabled = d.enabled !== false;
+            return `
+            <div class="domain-card${enabled ? '' : ' disabled'}" id="card-${CSS.escape(d.domain)}">
+                <div class="domain-card-header">
+                    <div class="domain-left">
+                        <label class="toggle" title="${enabled ? 'disable' : 'enable'} domain">
+                            <input type="checkbox" ${enabled ? 'checked' : ''}
+                                onchange="toggleDomain('${escapeHtml(d.domain)}', this.checked)">
+                            <div class="toggle-track"></div>
+                            <div class="toggle-thumb"></div>
+                        </label>
+                        <div class="domain-name">
+                            ${escapeHtml(d.domain)}
+                            ${d.staticPort ? `<span class="static-badge">static :${d.staticPort}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        ${d.staticPort ? `
+                            <button class="btn btn-sm btn-ghost" onclick="openStaticViewer('${escapeHtml(d.domain)}')">
+                                <i data-lucide="external-link" style="width:11px;height:11px;"></i>
+                            </button>` : ''}
+                        <button class="btn btn-sm btn-ghost" onclick="editDomain('${escapeHtml(d.domain)}')">
+                            <i data-lucide="pencil" style="width:11px;height:11px;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteDomain('${escapeHtml(d.domain)}')">
+                            <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="records-row">
+                    ${d.records.map(r => `
+                        <div class="record-chip">
+                            <span class="record-type type-${r.type}">${escapeHtml(r.type)}</span>
+                            <span>${escapeHtml(r.data)}</span>
+                            <span style="color:rgba(232,234,240,.2)">ttl ${r.ttl||300}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    async function toggleDomain(domain, enabled) {
+        const card = document.getElementById(`card-${CSS.escape(domain)}`);
+        if (card) card.classList.toggle('disabled', !enabled);
+        try {
+            const res = await fetch(`/api/domains/${encodeURIComponent(domain)}`);
+            const data = await res.json();
+            await fetch(`/api/domains/${encodeURIComponent(domain)}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...data.domain, enabled })
+            });
+        } catch {
+            if (card) card.classList.toggle('disabled', enabled);
+            loadDomains();
+        }
+    }
+
+    function openAddModal() {
+        currentEditingDomain = null;
+        document.getElementById('modalTitle').textContent = 'add domain';
+        document.getElementById('domainForm').reset();
+        document.getElementById('recordsContainer').innerHTML = '';
+        recordCounter = 0;
+        document.getElementById('enableStatic').checked = false;
+        toggleStaticFields();
+        if (monacoReady) { monacoDomain.setValue(defaultHtml); switchEditorTab('editor', 'domainModal'); }
+        addRecord();
+        document.getElementById('domainModal').classList.add('active');
+        lucide.createIcons();
+    }
+
+    function editDomain(domain) {
+        fetch(`/api/domains/${encodeURIComponent(domain)}`)
+            .then(r => r.json())
+            .then(data => {
+                currentEditingDomain = domain;
+                document.getElementById('modalTitle').textContent = 'edit domain';
+                document.getElementById('domainName').value = data.domain.domain;
+                document.getElementById('recordsContainer').innerHTML = '';
+                recordCounter = 0;
+                if (data.domain.staticPort) {
+                    document.getElementById('enableStatic').checked = true;
+                    document.getElementById('staticPort').value = data.domain.staticPort;
+                    document.getElementById('staticHtmlPath').value = data.domain.staticHtmlPath || '';
+                    toggleStaticFields();
+                    if (data.domain.staticHtmlPath && monacoReady) {
+                        fetch(`/api/load-html?path=${encodeURIComponent(data.domain.staticHtmlPath)}`)
+                            .then(r => r.json())
+                            .then(hd => {
+                                if (hd.status === 'success' && hd.content) { monacoDomain.setValue(hd.content); switchEditorTab('editor','domainModal'); }
+                                else switchEditorTab('path','domainModal');
+                            }).catch(() => switchEditorTab('path','domainModal'));
+                    }
+                } else {
+                    document.getElementById('enableStatic').checked = false;
+                    toggleStaticFields();
+                }
+                data.domain.records.forEach(r => addRecord(r));
+                if (!data.domain.records.length) addRecord();
+                document.getElementById('domainModal').classList.add('active');
+                lucide.createIcons();
+            }).catch(() => alert('error loading domain'));
+    }
+
+    function addRecord(record = null) {
+        const container = document.getElementById('recordsContainer');
+        const id = recordCounter++;
+        const div = document.createElement('div');
+        div.className = 'record-form'; div.id = `record-${id}`;
+        div.innerHTML = `
+            <div class="record-form-row">
+                <select name="recordType">
+                    ${['A','AAAA','CNAME','MX','TXT','NS'].map(t =>
+                        `<option value="${t}" ${record?.type===t?'selected':''}>${t}</option>`
+                    ).join('')}
+                </select>
+                <input type="text" name="recordName" placeholder="name" value="${record?.name||''}" required>
+                <input type="text" name="recordData" placeholder="ip / data" value="${record?.data||''}" required>
+            </div>
+            <div class="record-form-bottom">
+                <input type="number" name="recordTtl" placeholder="TTL" value="${record?.ttl||300}" style="width:80px;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeRecord(${id})">
+                    <i data-lucide="x" style="width:10px;height:10px;"></i> remove
+                </button>
+            </div>`;
+        container.appendChild(div);
+        lucide.createIcons();
+    }
+
+    function removeRecord(id) { document.getElementById(`record-${id}`)?.remove(); }
+
+    async function saveDomain(e) {
+        e.preventDefault();
+        const domainName = document.getElementById('domainName').value;
+        const records = [];
+        document.querySelectorAll('.record-form').forEach(form => {
+            const type = form.querySelector('[name="recordType"]').value;
+            const name = form.querySelector('[name="recordName"]').value;
+            const data = form.querySelector('[name="recordData"]').value;
+            const ttl  = parseInt(form.querySelector('[name="recordTtl"]').value) || 300;
+            if (name && data) records.push({ type, name, data, ttl });
+        });
+        if (!records.length) { alert('add at least one DNS record'); return; }
+        const domainData = { domain: domainName, records };
+        if (document.getElementById('enableStatic').checked) {
+            const staticPort = parseInt(document.getElementById('staticPort').value);
+            const editorEl = document.getElementById('editorTabDomain');
+            let staticHtmlPath = '', htmlContent = '';
+            if (staticPort > 0) {
+                if (editorEl.style.display !== 'none' && monacoReady) {
+                    htmlContent = monacoDomain.getValue();
+                    staticHtmlPath = `data/static/${domainName.replace(/[^a-zA-Z0-9]/g,'_')}.html`;
+                } else {
+                    staticHtmlPath = document.getElementById('staticHtmlPath').value;
+                }
+                if (staticHtmlPath || htmlContent) {
+                    domainData.staticPort = staticPort;
+                    domainData.staticHtmlPath = staticHtmlPath;
+                    if (htmlContent) {
+                        const sr = await fetch('/api/save-html', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: staticHtmlPath, content: htmlContent }) });
+                        const sj = await sr.json();
+                        if (sj.status !== 'success') { alert('error saving html'); return; }
+                    }
+                }
+            }
+        }
+        try {
+            const method = currentEditingDomain ? 'PUT' : 'POST';
+            const url = currentEditingDomain ? `/api/domains/${encodeURIComponent(currentEditingDomain)}` : '/api/domains';
+            const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(domainData) });
+            const result = await res.json();
+            if (result.status === 'success') { closeModal(); loadDomains(); }
+            else alert('error: ' + (result.message || 'unknown'));
+        } catch { alert('error saving domain'); }
+    }
+
+    async function deleteDomain(domain) {
+        if (!confirm(`delete ${domain}?`)) return;
+        try {
+            const res = await fetch(`/api/domains/${encodeURIComponent(domain)}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.status === 'success') loadDomains();
+            else alert('error: ' + (result.message || 'unknown'));
+        } catch { alert('error deleting domain'); }
+    }
+
+    function closeModal() { document.getElementById('domainModal').classList.remove('active'); }
+
+    function toggleStaticFields() {
+        document.getElementById('staticFields').style.display =
+            document.getElementById('enableStatic').checked ? 'block' : 'none';
+    }
+
+    function openAddStaticModal() {
+        document.getElementById('staticForm').reset();
+        if (monacoReady) { monacoStatic.setValue(defaultHtml); switchEditorTab('editor'); }
+        document.getElementById('staticModal').classList.add('active');
+        lucide.createIcons();
+    }
+
+    function closeStaticModal() {
+        document.getElementById('staticModal').classList.remove('active');
+        document.getElementById('staticForm').reset();
+    }
+
+    async function saveStaticOverride(e) {
+        e.preventDefault();
+        const domainName  = document.getElementById('staticDomainName').value;
+        const staticPort  = parseInt(document.getElementById('staticPortInput').value);
+        const ipAddress   = document.getElementById('staticIpAddress').value;
+        const editorEl    = document.getElementById('editorTab');
+        let staticHtmlPath = '', htmlContent = '';
+        if (editorEl.style.display !== 'none' && monacoReady) {
+            htmlContent    = monacoStatic.getValue();
+            staticHtmlPath = `data/static/${domainName.replace(/[^a-zA-Z0-9]/g,'_')}.html`;
+        } else {
+            staticHtmlPath = document.getElementById('staticHtmlPathInput').value;
+            if (!staticHtmlPath) { alert('provide html content or file path'); return; }
+        }
+        const domainData = {
+            domain: domainName,
+            records: [{ type:'A', name: domainName, data: ipAddress, ttl:300 }],
+            staticPort, staticHtmlPath
+        };
+        if (htmlContent) {
+            const sr = await fetch('/api/save-html', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: staticHtmlPath, content: htmlContent }) });
+            const sj = await sr.json();
+            if (sj.status !== 'success') { alert('error saving html'); return; }
+        }
+        try {
+            const res = await fetch('/api/domains', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(domainData) });
+            const result = await res.json();
+            if (result.status === 'success') { closeStaticModal(); loadDomains(); }
+            else alert('error: ' + (result.message || 'unknown'));
+        } catch { alert('error saving static override'); }
+    }
+
+    function openStaticViewer(domain) {
+        const port = window.location.port || '4167';
+        window.open(`http://localhost:${port}/static/${encodeURIComponent(domain)}/viewer`, '_blank');
+    }
+
+    function escapeHtml(text) {
+        const d = document.createElement('div'); d.textContent = text; return d.innerHTML;
+    }
+
+    document.getElementById('domainModal').addEventListener('click', e => { if (e.target.id === 'domainModal') closeModal(); });
+    document.getElementById('staticModal').addEventListener('click', e => { if (e.target.id === 'staticModal') closeStaticModal(); });
+</script>
+</body>
+</html>

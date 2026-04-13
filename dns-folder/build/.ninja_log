@@ -1,0 +1,10 @@
+# ninja log v6
+2987	3167	1768353300895264069	dns-server	7edbdbe97da767d2
+18	2987	1768353297926208392	CMakeFiles/dns-server.dir/cpp/src/DnsServer.cpp.o	8cc6d2bc88bf67fc
+13	834	1768353799427143857	build.ninja	4de2706c1acbe873
+18	601	1768353297926331519	CMakeFiles/dns-server.dir/cpp/src/DnsPacket.cpp.o	86f2c2ecc96edae2
+18	1608	1768353297925978890	CMakeFiles/dns-server.dir/cpp/src/main.cpp.o	a173199066f533ad
+20	1283	1768353806361961053	CMakeFiles/dns-server.dir/cpp/src/DnsPacket.cpp.o	667562c5e32b9c96
+19	3171	1768353806360964876	CMakeFiles/dns-server.dir/cpp/src/main.cpp.o	743afe3987168e99
+20	6779	1768353806361526257	CMakeFiles/dns-server.dir/cpp/src/DnsServer.cpp.o	667a090f2507b73b
+6779	6945	1768353813121208445	dns-server	195280880c412208

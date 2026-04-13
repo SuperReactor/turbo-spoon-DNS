@@ -1,0 +1,3 @@
+/Users/darren/dns/build/_deps/httplib-subbuild/CMakeFiles/httplib-populate.dir
+/Users/darren/dns/build/_deps/httplib-subbuild/CMakeFiles/edit_cache.dir
+/Users/darren/dns/build/_deps/httplib-subbuild/CMakeFiles/rebuild_cache.dir
